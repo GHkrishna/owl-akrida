@@ -1,0 +1,52 @@
+FROM docker.io/node:18.19.0 as base
+
+ARG LOADDIR="/load-agent"
+
+# Setup timezone
+ENV TZ=America/Denver
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# Install dependencies
+RUN apt-get update -y && apt-get install -y \
+    curl \
+    gcc \
+    g++ \
+    make \
+    git \
+    libssl-dev \
+    pkg-config \
+    python3 \
+    python3-pip \
+    python3-venv \
+    libsodium-dev \
+    libzmq3-dev \
+    tmux \
+    htop
+
+# Create a virtual environment for Python
+RUN python3 -m venv /opt/venv
+
+# Activate the virtual environment
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Upgrade pip and install Locust
+RUN pip install --upgrade pip
+RUN pip install locust==2.14.2
+
+# Include yarn and ts-node
+RUN yarn global add ts-node typescript
+
+# Set working directory
+WORKDIR ${LOADDIR}
+
+# Copy application files
+ADD ./load-agent ${LOADDIR}
+
+#WORKDIR ${LOADDIR}/load-agent
+
+# Clean and install Node.js dependencies
+RUN rm -rf node_modules/
+RUN yarn install
+
+# Default command
+CMD ["locust"]
