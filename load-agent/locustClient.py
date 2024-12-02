@@ -106,10 +106,16 @@ class CustomClient:
         if ISSUER_TYPE == 'acapy':
             from issuerAgent.acapy import AcapyIssuer
             self.issuer = AcapyIssuer()
+        elif ISSUER_TYPE == 'credo':
+            from issuerAgent.credots import CredoIssuer
+            self.issuer = CredoIssuer()
             
         if VERIFIER_TYPE == 'acapy':
             from verifierAgent.acapy import AcapyVerifier
             self.verifier = AcapyVerifier()
+        elif VERIFIER_TYPE == 'credo':
+            from verifierAgent.credots import CredoVerifier
+            self.issuer = CredoVerifier()
             
     _locust_environment = None
 
