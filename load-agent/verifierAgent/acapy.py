@@ -166,7 +166,7 @@ class AcapyVerifier(BaseVerifier):
                 headers = json.loads(os.getenv("VERIFIER_HEADERS"))  # headers same
                 headers["Content-Type"] = "application/json"
 
-                json_data = os.getenv("VERIFICATION_PAYLOAD")
+                json_data = os.getenv("JSONLD_VERIFICATION_PAYLOAD")
                 if json_data:
                         json_data=json.loads(json_data)
                         json_data["connection_id"]=connection_id
