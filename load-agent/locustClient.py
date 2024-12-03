@@ -115,7 +115,7 @@ class CustomClient:
             self.verifier = AcapyVerifier()
         elif VERIFIER_TYPE == 'credo':
             from verifierAgent.credots import CredoVerifier
-            self.issuer = CredoVerifier()
+            self.verifier = CredoVerifier()
             
     _locust_environment = None
 
@@ -286,7 +286,7 @@ class CustomClient:
         line = self.readjsonline()
 
     @stopwatch
-    def accept_invite(self, invite,useConnectionDid=False):
+    def accept_invite(self, invite, outOfBandId='',useConnectionDid=False):
         try:
             if useConnectionDid:
                 self.run_command({"cmd": "receiveInvitationConnectionDid", "invitationUrl": invite})
@@ -294,10 +294,12 @@ class CustomClient:
                 self.run_command({"cmd": "receiveInvitation", "invitationUrl": invite})
         except Exception:
             self.run_command({"cmd": "receiveInvitation", "invitationUrl": invite})
+        if ISSUER_TYPE == "credo":
+            return self.issuer.get_connectionId(outOfBandId)
+        else:
+            line = self.readjsonline()
 
-        line = self.readjsonline()
-
-        return line["connection"]
+            return line["connection"]
 
     @stopwatch
     def receive_credential(self, connection_id, didKey):

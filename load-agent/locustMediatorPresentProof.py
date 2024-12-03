@@ -32,8 +32,12 @@ class UserBehaviour(SequentialTaskSet):
     def accept_issuer_invite(self):
         self.client.ensure_is_running()
 
-        connection = self.client.accept_invite(self.invite['invitation_url'])
-        self.connection = connection
+        connection = self.client.accept_invite(self.invite['invitation_url'], self.invite['outOfBandId'])
+
+        if (os.getenv("ISSUER_TYPE", default="acapy") == "credo"):
+            self.invite['connection_id'] = connection
+        else:
+            self.connection = connection
 
     @task
     def create_did(self):

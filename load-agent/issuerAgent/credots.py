@@ -4,59 +4,71 @@ import os
 import requests
 import time
 from .utils.jsonldCredential import get_jsonld_credential_payload
+from json.decoder import JSONDecodeError
 
+VERIFIED_TIMEOUT_SECONDS = int(os.getenv("VERIFIED_TIMEOUT_SECONDS", 120))
 class CredoIssuer(BaseIssuer):
         
         def get_invite(self, out_of_band=False):
                 headers = json.loads(os.getenv("ISSUER_HEADERS"))
                 headers["Content-Type"] = "application/json"
                 headers["Accept"] = "application/json"
-                headers["Authorization"] = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZ2VudEluZm8iOiJhZ2VudEluZm8iLCJpYXQiOjE3MzMxMzYwMTR9.XVnCBtHY95dLamY0SGC5acp8Cs3UmqbAtBVt_wBCveQ"
+                headers["Authorization"] = ""
 
-                if out_of_band:
-                        # Out of Band Connection 
-                        # (ACA-Py v10.4 - only works with connections protocol, not DIDExchange) 
-                        r = requests.post(
-                                os.getenv("ISSUER_URL") + "/out-of-band/create-invitation?auto_accept=true", 
-                                json={
-                                "metadata": {}, 
-                                "handshake_protocols": ["https://didcomm.org/connections/1.0"]
-                                },
-                                headers=headers
-                        )
-                else:
-                        # Regular Connection
-                        r = requests.post(
-                                os.getenv("ISSUER_URL") + "/connections/create-invitation?auto_accept=true",
-                                json={"metadata": {}, "my_label": "Test"},
-                                headers=headers,
-                        )
+                r = requests.post(
+                        url=os.getenv("ISSUER_URL") + "/multi-tenancy/create-invitation/" + os.getenv("ISSUER_TENANT_ID"), 
+                        json={
+                        "autoAcceptConnection": True        
+                        },
+                        headers=headers
+                )
 
-                        # Ensure the request worked
-                        try:
-                                try_var = r.json()["invitation_url"]
-                        except Exception:
-                                raise Exception("Failed to get invitation url. Request: ", r.json())
-                        if r.status_code != 200:
-                                raise Exception(r.content)
+                try:
+                        try_var = r.json()["invitationUrl"]
+                except Exception:
+                        raise Exception("Failed to get invitation url. Request: ", r.json())
+                if r.status_code != 200:
+                        raise Exception(r.content)
 
                 r = r.json()
 
-                # If OOB, need to grab connection_id
-                if out_of_band:
-                        invitation_msg_id = r['invi_msg_id']
-                        g = requests.get(
-                                os.getenv("ISSUER_URL") + "/connections",
-                                params={"invitation_msg_id": invitation_msg_id},
-                                headers=headers,
-                        )
-                        # Returns only one
-                        connection_id = g.json()['results'][0]['connection_id']
-                        r['connection_id'] = connection_id 
-                
                 return {
-                        'invitation_url': r['invitation_url'], 
-                        'connection_id': r['connection_id']
+                        'invitation_url': r['invitationUrl'], 
+                        'outOfBandId': r['outOfBandRecord']['id']
+                }
+        def get_connectionId(self, outOfBandId):
+                headers = json.loads(os.getenv("ISSUER_HEADERS"))
+                headers["Content-Type"] = "application/json"
+                headers["Accept"] = "application/json"
+                headers["Authorization"] = ""
+                iteration = 0
+                try:
+                        while iteration < VERIFIED_TIMEOUT_SECONDS:
+                                g = requests.get(
+                                        url=os.getenv("ISSUER_URL") + "/multi-tenancy/connections/" + os.getenv("ISSUER_TENANT_ID"),
+                                        headers=headers,
+                                        params={"outOfBandId": outOfBandId}
+                                )
+                                if (len(g.json()) > 0 and g.json()[0]["state"] == "completed"):
+                                        break
+                                iteration += 1
+                                time.sleep(1)
+
+                        if g.json()[0]["state"] != "completed":
+                                raise AssertionError(
+                                        f"Connection was not successfully Created. Connection in state {g.json()['state']}"
+                                )
+
+                except JSONDecodeError as e:
+                        raise Exception(
+                                "Encountered JSONDecodeError while getting the connection record: ", g
+                        )
+
+
+                g = g.json()
+                connection_id = g[0]['id']
+                return {
+                        "connection_id": connection_id
                 }
 
         def is_up(self):
@@ -64,8 +76,7 @@ class CredoIssuer(BaseIssuer):
                         headers = json.loads(os.getenv("ISSUER_HEADERS"))
                         headers["Content-Type"] = "application/json"
                         r = requests.get(
-                                os.getenv("ISSUER_URL") + "/status",
-                                json={"metadata": {}, "my_label": "Test"},
+                                os.getenv("ISSUER_URL") + "/agent",
                                 headers=headers,
                         )
                         if r.status_code != 200:
