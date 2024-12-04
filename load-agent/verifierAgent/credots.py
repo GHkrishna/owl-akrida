@@ -4,7 +4,7 @@ import os
 import requests
 import time
 import uuid
-from .utils.jsonldVerificationPayload import get_jsonld_verification_payload
+from .utils.credo_jsonldVerificationPayload import get_jsonld_verification_payload
 
 from json.decoder import JSONDecodeError
 
@@ -169,14 +169,14 @@ class CredoVerifier(BaseVerifier):
                 json_data = os.getenv("JSONLD_VERIFICATION_PAYLOAD")
                 if json_data:
                         json_data=json.loads(json_data)
-                        json_data["connection_id"]=connection_id
-                        json_data["presentation_request"]["dif"]["presentation_definition"]["id"]=str(uuid.uuid4()) #generate_random_uuid
-                        json_data["presentation_request"]["dif"]["presentation_definition"]["input_descriptors"][0]["id"]=str(uuid.uuid4()) #generate_random_uuid
+                        json_data['connectionId']=connection_id
+                        json_data['proofFormats']['presentationExchange']['presentationDefinition']['id']=str(uuid.uuid4()) #generate_random_uuid
+                        json_data['proofFormats']['presentationExchange']['presentationDefinition']['input_descriptors'][0]['id']=str(uuid.uuid4()) #generate_random_uuid
                 else:
                         json_data=get_jsonld_verification_payload(connection_id=connection_id)
 
                 r = requests.post(
-                        os.getenv("VERIFIER_URL") + "/present-proof-2.0/send-request",
+                        os.getenv("VERIFIER_URL") + "/multi-tenancy/proofs/request-proof/" + os.getenv("ISSUER_TENANT_ID"),
                         json=json_data,
                         headers=headers,
                 )
@@ -191,7 +191,7 @@ class CredoVerifier(BaseVerifier):
                 
                 r = r.json()
 
-                return r['pres_ex_id']
+                return r['id']
 
         def verify_verification(self, presentation_exchange_id):
                 headers = json.loads(os.getenv("VERIFIER_HEADERS"))  # headers same
@@ -199,7 +199,7 @@ class CredoVerifier(BaseVerifier):
                 url=''
                 credential_format = os.getenv("CREDENTIAL_FORMAT", default="indy")
                 if (credential_format == "jsonld"):
-                        url = os.getenv("VERIFIER_URL") + "/present-proof-2.0/records/" + presentation_exchange_id
+                        url = os.getenv("VERIFIER_URL") + "/multi-tenancy/proofs/" + presentation_exchange_id + "/" + os.getenv("VERIFIER_TENANT_ID")
                 elif (credential_format == "indy"):
                         url = os.getenv("VERIFIER_URL") + "/present-proof/records/" + presentation_exchange_id
                 # Want to do a for loop
@@ -211,15 +211,14 @@ class CredoVerifier(BaseVerifier):
                                         headers=headers,
                                 )
                                 if (
-                                        g.json()["state"] != "request_sent"
-                                        and g.json()["state"] != "presentation_received"
+                                        g.json()["state"] != "request-sent"
+                                        and g.json()["state"] != "presentation-received"
                                 ):
-                                        "request_sent" and g.json()["state"] != "presentation_received"
                                         break
                                 iteration += 1
                                 time.sleep(1)
 
-                        if g.json()["verified"] != "true":
+                        if g.json()["isVerified"] != True:
                                 raise AssertionError(
                                         f"Presentation was not successfully verified. Presentation in state {g.json()['state']}"
                                 )

@@ -286,7 +286,7 @@ class CustomClient:
         line = self.readjsonline()
 
     @stopwatch
-    def accept_invite(self, invite, outOfBandId='',useConnectionDid=False):
+    def accept_invite(self, invite, useConnectionDid=False):
         try:
             if useConnectionDid:
                 self.run_command({"cmd": "receiveInvitationConnectionDid", "invitationUrl": invite})
@@ -294,12 +294,14 @@ class CustomClient:
                 self.run_command({"cmd": "receiveInvitation", "invitationUrl": invite})
         except Exception:
             self.run_command({"cmd": "receiveInvitation", "invitationUrl": invite})
+        line = self.readjsonline()
+
+        return line["connection"]
+
+    @stopwatch
+    def create_connection(self, outOfBandId=''):
         if ISSUER_TYPE == "credo":
             return self.issuer.get_connectionId(outOfBandId)
-        else:
-            line = self.readjsonline()
-
-            return line["connection"]
 
     @stopwatch
     def receive_credential(self, connection_id, didKey):

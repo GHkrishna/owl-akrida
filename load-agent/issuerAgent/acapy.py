@@ -3,7 +3,7 @@ import json
 import os
 import requests
 import time
-from .utils.jsonldCredential import get_jsonld_credential_payload
+from .utils.acapy_jsonldCredential import get_jsonld_credential_payload
 
 class AcapyIssuer(BaseIssuer):
         

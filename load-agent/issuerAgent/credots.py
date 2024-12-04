@@ -3,7 +3,7 @@ import json
 import os
 import requests
 import time
-from .utils.jsonldCredential import get_jsonld_credential_payload
+from .utils.credo_jsonldCredential import get_jsonld_credential_payload
 from json.decoder import JSONDecodeError
 
 VERIFIED_TIMEOUT_SECONDS = int(os.getenv("VERIFIED_TIMEOUT_SECONDS", 120))
@@ -13,7 +13,6 @@ class CredoIssuer(BaseIssuer):
                 headers = json.loads(os.getenv("ISSUER_HEADERS"))
                 headers["Content-Type"] = "application/json"
                 headers["Accept"] = "application/json"
-                headers["Authorization"] = ""
 
                 r = requests.post(
                         url=os.getenv("ISSUER_URL") + "/multi-tenancy/create-invitation/" + os.getenv("ISSUER_TENANT_ID"), 
@@ -40,7 +39,6 @@ class CredoIssuer(BaseIssuer):
                 headers = json.loads(os.getenv("ISSUER_HEADERS"))
                 headers["Content-Type"] = "application/json"
                 headers["Accept"] = "application/json"
-                headers["Authorization"] = ""
                 iteration = 0
                 try:
                         while iteration < VERIFIED_TIMEOUT_SECONDS:
@@ -128,17 +126,18 @@ class CredoIssuer(BaseIssuer):
         def issue_jsonld_credential(self, connection_id, didKey):
                 headers = json.loads(os.getenv("ISSUER_HEADERS"))
                 headers["Content-Type"] = "application/json"
+                headers["accept"] = "application/json"
 
                 json_data=os.getenv("JSONLD_ISSUANCE_PAYLOAD")
                 if (json_data):
                         json_data = json.loads(json_data)
-                        json_data['connection_id']=connection_id
-                        json_data['filter']['ld_proof']['credential']['credentialSubject']['id'] = didKey
+                        json_data['connectionId']=connection_id
+                        json_data['credentialFormats']['jsonld']['credential']['credentialSubject']['id'] = didKey
                 else:
                         json_data=get_jsonld_credential_payload(connection_id, os.getenv("JSONLD_ISSUANCE_DID"), didKey)
                         
                 r = requests.post(
-                        os.getenv("ISSUER_URL") + "/issue-credential-2.0/send-offer",
+                        os.getenv("ISSUER_URL") + "/multi-tenancy/credentials/create-offer/" + os.getenv("ISSUER_TENANT_ID"),
                         json=json_data,
                         headers=headers,
                 )
@@ -148,8 +147,8 @@ class CredoIssuer(BaseIssuer):
                 r = r.json()
 
                 return {
-                        "connection_id": r["connection_id"], 
-                        "cred_ex_id": r["cred_ex_id"]
+                        "connection_id": r["connectionId"], 
+                        "cred_ex_id": r["id"]
                 }
 
         def revoke_credential(self, connection_id, credential_exchange_id):
