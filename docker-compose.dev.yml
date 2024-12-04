@@ -4,7 +4,8 @@ services:
   load-agent:
     build:
       context: .
-      target: dev
+      dockerfile: Dockerfile.file
+      # target: dev
     hostname: load-agent
     restart: unless-stopped
     user: root 
@@ -39,6 +40,7 @@ services:
       - START_PORT=${START_PORT}
       - END_PORT=${END_PORT}
       - ISSUER_TENANT_ID=${ISSUER_TENANT_ID}
+      - VERIFIER_TENANT_ID=${VERIFIER_TENANT_ID}
       - MESSAGE_TO_SEND=${MESSAGE_TO_SEND}
       - VERIFIED_TIMEOUT_SECONDS=${VERIFIED_TIMEOUT_SECONDS}
       - WITH_MEDIATION=${WITH_MEDIATION}
