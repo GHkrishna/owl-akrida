@@ -1,12 +1,7 @@
 from locust import SequentialTaskSet, task, User, between
 from locustClient import CustomClient
-import time
-import inspect
-import json
 
-import fcntl
 import os
-import signal
 
 WITH_MEDIATION = os.getenv("WITH_MEDIATION")
 
