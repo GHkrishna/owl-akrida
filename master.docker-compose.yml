@@ -4,7 +4,8 @@ services:
   load-agent:
     build:
       context: .
-      target: release
+      dockerfile: Dockerfile.file
+#      target: release
     hostname: load-agent
     restart: unless-stopped
     user: root 
@@ -37,6 +38,8 @@ services:
       - VERIFIED_TIMEOUT_SECONDS=${VERIFIED_TIMEOUT_SECONDS}
       - WITH_MEDIATION=${WITH_MEDIATION}
       - OOB_INVITE=${OOB_INVITE}
+    env_file:
+      - .env
 
     networks:
       - app-network

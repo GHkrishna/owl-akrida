@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile.file
       # target: dev
     hostname: load-agent
-    restart: unless-stopped
+#    restart: unless-stopped
     user: root 
     tty: true
     working_dir: /load-agent  # Set the working directory
