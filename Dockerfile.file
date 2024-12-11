@@ -47,6 +47,7 @@ ADD ./load-agent ${LOADDIR}
 # Clean and install Node.js dependencies
 RUN rm -rf node_modules/
 RUN yarn install
+RUN yarn postinstall
 
 # Default command
 CMD ["locust"]
