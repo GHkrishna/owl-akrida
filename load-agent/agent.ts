@@ -132,7 +132,7 @@ const initializeAgent = async (withMediation, port, agentConfig = null) => {
     // }),
     mediationRecipient: new MediationRecipientModule({
       mediatorInvitationUrl: mediation_url,
-      mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2,
+      mediatorPickupStrategy: MediatorPickupStrategy.PickUpV2LiveMode,
       // mediatorPickupStrategy: MediatorPickupStrategy.Implicit,
     }),
     anoncreds: new AnonCredsModule({
@@ -206,76 +206,75 @@ const initializeAgent = async (withMediation, port, agentConfig = null) => {
     agent.registerOutboundTransport(httpTransport)
 
     // For pickUpV2
-  if (withMediation) {
-    var def = deferred()
+    // if (withMediation) {
+    //   var def = deferred()
 
-    // Initialize the agent
-    await agent.initialize()
-    // Wait for 2 sec
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    //   // Initialize the agent
+    //   await agent.initialize()
+    //   // Wait for 2 sec
+    //   await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    def.resolve(true)
-  } else {
-    const httpInbound = new HttpInboundTransport({ port:port })
-    agent.registerInboundTransport(httpInbound);
-    await agent.initialize()
-  }
-  
-  // For pickupV2LiveMode
-  // if (withMediation) {
-  //   // wait for medation to be configured
-  //   let timeout = config.verified_timeout_seconds * 1000
+    //   def.resolve(true)
+    // } 
 
-  //   const TimeDelay = new Promise((resolve, reject) => {
-  //     setTimeout(resolve, timeout, false)
-  //   })
+    // For pickupV2LiveMode
+    if (withMediation) {
+      // wait for medation to be configured
+      let timeout = config.verified_timeout_seconds * 1000
 
-  //   var def = deferred()
+      const TimeDelay = new Promise((resolve, reject) => {
+        setTimeout(resolve, timeout, false)
+      })
 
-  //   var onConnectedMediation = async (event) => {
-  //     let mediatorConnection = null
-  //     let interval = 100; 
-  //     for (let i = 0; i < (timeout - interval); i++)
-  //     {
-  //       // OutboundWebSocketOpenedEvent occurs before mediation is finalized, so we want to check
-  //       // for the default mediation connection until it is not null or we hit a timeout
-  //       // we sleep a small amount between requests just to be kind to our CPU. 
-  //       await new Promise(r => setTimeout(r, interval))
-  //       mediatorConnection = await agent.mediationRecipient.findDefaultMediatorConnection()
-  //       if (mediatorConnection != null) {
-  //         break;
-  //       }
-  //     }
-  //     if (event.payload.connectionId === mediatorConnection?.id) {
-  //       def.resolve(true)
-  //       // we no longer need to listen to the event
-  //       agent.events.off(
-  //         TransportEventTypes.OutboundWebSocketOpenedEvent,
-  //         onConnectedMediation
-  //       )
-  //     }
-  //   }
+      var def = deferred()
 
-  //   agent.events.on(
-  //     TransportEventTypes.OutboundWebSocketOpenedEvent,
-  //     onConnectedMediation
-  //   )
+      var onConnectedMediation = async (event) => {
+        let mediatorConnection = null
+        let interval = 100;
+        for (let i = 0; i < (timeout - interval); i++) {
+          // OutboundWebSocketOpenedEvent occurs before mediation is finalized, so we want to check
+          // for the default mediation connection until it is not null or we hit a timeout
+          // we sleep a small amount between requests just to be kind to our CPU. 
+          await new Promise(r => setTimeout(r, interval))
+          mediatorConnection = await agent.mediationRecipient.findDefaultMediatorConnection()
+          if (mediatorConnection != null) {
+            break;
+          }
+        }
+        if (event.payload.connectionId === mediatorConnection?.id) {
+          def.resolve(true)
+          // we no longer need to listen to the event
+          agent.events.off(
+            TransportEventTypes.OutboundWebSocketOpenedEvent,
+            onConnectedMediation
+          )
+        }
+      }
 
-  //   // Initialize the agent
-  //   await agent.initialize()
+      agent.events.on(
+        TransportEventTypes.OutboundWebSocketOpenedEvent,
+        onConnectedMediation
+      )
 
-  //   // wait for ws to be configured
-  //   let value = await Promise.race([TimeDelay, def.promise])
+      // Initialize the agent
+      await agent.initialize()
 
-  //   if (!value) {
-  //     // we no longer need to listen to the event in case of failure
-  //     agent.events.off(
-  //       TransportEventTypes.OutboundWebSocketOpenedEvent,
-  //       onConnectedMediation
-  //     )
-  //     throw 'Mediator timeout!'
-  //   }
-  // } 
+      // wait for ws to be configured
+      let value = await Promise.race([TimeDelay, def.promise])
+
+      if (!value) {
+        // we no longer need to listen to the event in case of failure
+        agent.events.off(
+          TransportEventTypes.OutboundWebSocketOpenedEvent,
+          onConnectedMediation
+        )
+        throw 'Mediator timeout!'
+      }
+    } else {
+      const httpInbound = new HttpInboundTransport({ port: port })
+      agent.registerInboundTransport(httpInbound);
+      await agent.initialize()
+    }
 
   return [agent, agentConfig]
 
