@@ -516,6 +516,28 @@ let receiveCredential = async (agent) => {
   }
 }
 
+let receiveCredentialButStop = async (agent: Agent) => {
+
+  let wait_time = config.wait_time_credential_seconds
+
+  if (wait_time) {
+    // agent.config.logger.info("Stopping inbound transports...");
+    await agent.shutdown()
+
+    const totalSeconds = Math.ceil(wait_time);
+    for (let i = 1; i <= totalSeconds; i++) {
+      // agent.config.logger.info(`Waiting... ${i} second(s) elapsed`);
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    // agent.config.logger.info("Restarting inbound transports... ");
+    if (!agent.isInitialized) {
+      await agent.initialize()
+    }
+  }
+  await receiveCredential(agent);
+};
+
 let presentationExchange = async (agent) => {
   // wait for the ping
   let timeout = config.verified_timeout_seconds * 1000

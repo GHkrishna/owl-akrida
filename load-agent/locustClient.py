@@ -29,6 +29,7 @@ MESSAGE_TO_SEND = os.getenv("MESSAGE_TO_SEND", "ping")
 
 ISSUER_TYPE = os.getenv("ISSUER_TYPE", "acapy")
 VERIFIER_TYPE = os.getenv("VERIFIER_TYPE", "acapy")
+SLEEP_WHILE_ISSUANCE=bool(os.getenv("SLEEP_WHILE_ISSUANCE", False))
 
 RAW_OOB_BOOL = os.getenv("OOB_INVITE")
 if RAW_OOB_BOOL == "False":
@@ -305,7 +306,11 @@ class CustomClient:
 
     @stopwatch
     def receive_credential(self, connection_id, didKey):
-        self.run_command({"cmd": "receiveCredential"})
+        if not SLEEP_WHILE_ISSUANCE:
+            self.run_command({"cmd": "receiveCredential"})
+        else:
+            self.run_command({"cmd": "receiveCredentialButStop"})
+            
         credential_format = os.getenv("CREDENTIAL_FORMAT", default="indy")
         if credential_format == "indy":
             r = self.issuer.issue_credential(connection_id)

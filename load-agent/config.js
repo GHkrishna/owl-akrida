@@ -56,3 +56,4 @@ exports.mediation_url = process.env.MEDIATION_URL;
 exports.agent_ip = process.env.AGENT_IP;
 exports.verified_timeout_seconds = (process.env.VERIFIED_TIMEOUT_SECONDS || 120)
 exports.ledger = ledger;
+exports.wait_time_credential_seconds = (process.env.WAIT_TIME_CREDENTIAL_RECEIVE_SECONDS || 30);
