@@ -767,6 +767,12 @@ rl.on('line', async (line) => {
       process.stdout.write(
         JSON.stringify({ error: 0, result: 'Receive Credential' }) + '\n'
       )
+    } else if (command['cmd'] == 'receiveCredentialButStop') {
+      await receiveCredentialButStop(agent)
+
+      process.stdout.write(
+        JSON.stringify({ error: 0, result: 'Receive Credential' }) + '\n'
+      )
     } else if (command['cmd'] == 'presentationExchange') {
       await presentationExchange(agent)
 
