@@ -1,0 +1,14 @@
+diff --git a/node_modules/@credo-ts/indy-vdr/build/pool/IndyVdrPool.js b/node_modules/@credo-ts/indy-vdr/build/pool/IndyVdrPool.js
+index eab13b3..fafc267 100644
+--- a/node_modules/@credo-ts/indy-vdr/build/pool/IndyVdrPool.js
++++ b/node_modules/@credo-ts/indy-vdr/build/pool/IndyVdrPool.js
+@@ -17,7 +17,8 @@ class IndyVdrPool {
+     }
+     connect() {
+         if (this._pool) {
+-            throw new error_1.IndyVdrError('Cannot connect to pool, already connected.');
++            return
++            // throw new error_1.IndyVdrError('Cannot connect to pool, already connected.')
+         }
+         this._pool = new indy_vdr_shared_1.PoolCreate({
+             parameters: {
