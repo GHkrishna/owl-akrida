@@ -13,15 +13,15 @@ class CredoIssuer(BaseIssuer):
                 headers = json.loads(os.getenv("ISSUER_HEADERS"))
                 headers["Content-Type"] = "application/json"
                 headers["Accept"] = "application/json"
-
+                print(f"URL: {os.getenv('ISSUER_URL') + '/oob/create-invitation'}")
                 r = requests.post(
-                        url=os.getenv("ISSUER_URL") + "/multi-tenancy/create-invitation/" + os.getenv("ISSUER_TENANT_ID"), 
+                        url=os.getenv("ISSUER_URL") + "/oob/create-invitation", 
                         json={
                         "autoAcceptConnection": True        
                         },
                         headers=headers
                 )
-
+                print(f"Invitation Response: {r.text}")
                 try:
                         try_var = r.json()["invitationUrl"]
                 except Exception:
@@ -43,7 +43,7 @@ class CredoIssuer(BaseIssuer):
                 try:
                         while iteration < VERIFIED_TIMEOUT_SECONDS:
                                 g = requests.get(
-                                        url=os.getenv("ISSUER_URL") + "/multi-tenancy/connections/" + os.getenv("ISSUER_TENANT_ID"),
+                                        url=os.getenv("ISSUER_URL") + "/connections",
                                         headers=headers,
                                         params={"outOfBandId": outOfBandId}
                                 )
@@ -137,7 +137,7 @@ class CredoIssuer(BaseIssuer):
                         json_data=get_jsonld_credential_payload(connection_id, os.getenv("JSONLD_ISSUANCE_DID"), didKey)
                         
                 r = requests.post(
-                        os.getenv("ISSUER_URL") + "/multi-tenancy/credentials/create-offer/" + os.getenv("ISSUER_TENANT_ID"),
+                        os.getenv("ISSUER_URL") + "/credentials/create-offer",
                         json=json_data,
                         headers=headers,
                 )
